@@ -13,10 +13,23 @@ df$species <- gsub('z.mays', 'mays', df$species)
 df$species <- gsub('o.sativa', 'sativa', df$species)
 ######
 
-####### create the input for the taxa standardization
+############ create the input for the taxa standardization  
 df$subTaxa2 <- ifelse(is.na(df$subTaxa), "", df$subTaxa)
 df$full_taxa_input <- trimws(paste(df$genus, df$species, df$subTaxa2))
 
+# Fill NA values with an empty string
+df$spAuthor <- ifelse(is.na(df$spAuthor), "", df$spAuthor)
+
+# Strip leading and trailing whitespace from the 'spAuthor' column
+df$spAuthor <- trimws(df$spAuthor)
+
+# Concatenate 'full_taxa_input' with 'spAuthor'
+df$full_taxa_input <- paste(df$full_taxa_input, df$spAuthor)
+
+# Strip leading and trailing whitespace from the 'full_taxa_input' column
+df$full_taxa_input <- trimws(df$full_taxa_input)
+
+####################
 # function to query API of https://verifier.globalnames.org
 query_taxa_resolver <- function(taxa, sources = c('196')){
   if (is.character(taxa)){
@@ -41,17 +54,23 @@ query_taxa_resolver <- function(taxa, sources = c('196')){
 extract_best_result <- function(list_res){
   final <- list()
   for (i in list_res){
-    match_type <- i["names"][[1]]["matchType"]
-    if (match_type != "NoMatch"){
-      input_name <-  i["names"][[1]]$name
-      matched_name <-i["names"][[1]]$bestResult$matchedName
-      output_name <- i["names"][[1]]$bestResult$currentName
-      status <-  i["names"][[1]]$bestResult$taxonomicStatus
-      final <- append(final, list(c(input_name, matched_name, match_type, status, output_name)))
+    # added to handle the case one of the results of the query is NULL
+    if (is.null(i)) {
+      final <- append(final, list(c('null', 'no_match', 'no_match', 'no_match', 'no_match')))
+    } else if (!("names" %in% names(i))) {
+      final <- append(final, list(c('null', 'no_match', 'no_match', 'no_match', 'no_match')))
     } else {
-      final <- append(final, list(c( i["names"][[1]]$name, 'no_match', 'no_match', 'no_match', 'no_match')))
-    }
-  }
+      match_type <- i["names"][[1]]["matchType"]
+      if (match_type != "NoMatch"){
+        input_name <-  i["names"][[1]]$name
+        matched_name <-i["names"][[1]]$bestResult$matchedName
+        output_name <- i["names"][[1]]$bestResult$currentName
+        status <-  i["names"][[1]]$bestResult$taxonomicStatus
+        final <- append(final, list(c(input_name, matched_name, match_type, status, output_name)))
+      } else {
+        final <- append(final, list(c( i["names"][[1]]$name, 'no_match', 'no_match', 'no_match', 'no_match')))
+      }
+    }}
   return(final)
 }
 
