@@ -26,6 +26,15 @@ df$spAuthor <- trimws(df$spAuthor)
 # Concatenate 'full_taxa_input' with 'spAuthor'
 df$full_taxa_input <- paste(df$full_taxa_input, df$spAuthor)
 
+# For WIEWS dataset use full_taxa (Taxon on original WIEWS dataset)
+df$full_taxa_input <- ifelse(df$data_source == 'WIEWS', df$fullTaxa, df$full_taxa_input)
+
+# For GBIF dataset use full_taxa (ScientificName on original GBIF dataset)
+df$full_taxa_input <- ifelse(df$data_source == 'GBIF', df$fullTaxa, df$full_taxa_input)
+
+# For BGCI dataset use fullTaxa ("Name (in PlantSearch)" in original BGCI dataset)
+df$full_taxa_input <- ifelse(df$data_source == 'BGCI', df$fullTaxa, df$full_taxa_input)
+
 # Strip leading and trailing whitespace from the 'full_taxa_input' column
 df$full_taxa_input <- trimws(df$full_taxa_input)
 
